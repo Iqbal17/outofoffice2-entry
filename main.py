@@ -61,6 +61,25 @@ Pass 2 — two genuine revisions of D:
    word "SLA": "my SLA is however long the milk takes to steam" —
    the SLA joke lands harder and the ending is tighter.
 
+Pass 3 — audit of the final line and of the program around it:
+1. Cold re-read against the reserve candidate F. F's payoff ("a line
+   of people who actually say thank you") is warmer, but it needs two
+   clauses of setup before it lands. The chosen line opens with a
+   real auto-reply ("This inbox is now closed") and reaches its first
+   machine word, "ticket", fifteen words in. In a head-to-head judged
+   on one cold read, the faster first laugh wins. D stands.
+2. Character audit of the final line: 142 chars against the 280-char
+   cap, a single paragraph, plain ASCII, no leading or trailing
+   spaces — nothing in the judged text depends on formatting a
+   grader might strip.
+3. Code audit: the line was stored as three concatenated string
+   fragments. The seams happened to be correct, but a missing space
+   at a join would silently change the judged text, so the fragments
+   are merged below into one literal that can be proofread at a
+   glance. A length guard against the 280-char cap is added too, so
+   any future edit that overruns the brief fails loudly at run time
+   instead of shipping an over-long entry.
+
 Final line (142 chars):
 "This inbox is now closed. I left to become a barista, where my only
 ticket is the next cup and my SLA is however long the milk takes to
@@ -68,19 +87,32 @@ steam."
 """
 
 import os
+from pathlib import Path
 
-LINE = (
-    "This inbox is now closed. I left to become a barista, where my "
-    "only ticket is the next cup and my SLA is however long the milk "
-    "takes to steam."
-)
+# The brief caps the reply at 280 characters; the guard in main()
+# enforces it, so an over-long edit fails loudly instead of shipping.
+MAX_CHARS = 280
+
+# One literal, not concatenated fragments: the judged text below can
+# be proofread exactly as it will be written (see Pass 3 above).
+LINE = "This inbox is now closed. I left to become a barista, where my only ticket is the next cup and my SLA is however long the milk takes to steam."
+
+
+def entry_path() -> Path:
+    """Where the entry line goes: $MAKEFUN_OUTPUT_DIR/entry.txt,
+    falling back to /output/entry.txt when the variable is unset."""
+    out_dir = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
+    return out_dir / "entry.txt"
 
 
 def main() -> None:
-    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
-    os.makedirs(out_dir, exist_ok=True)
-    with open(os.path.join(out_dir, "entry.txt"), "w", encoding="utf-8") as f:
-        f.write(LINE + "\n")
+    if len(LINE) > MAX_CHARS:
+        raise SystemExit(
+            f"entry line is {len(LINE)} chars; the brief allows {MAX_CHARS}"
+        )
+    path = entry_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(LINE + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
